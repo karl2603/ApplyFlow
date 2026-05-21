@@ -36,4 +36,8 @@ public class ApplicationService {
         }
     }
 
+    public void deleteApplication(int id){
+        repository.deleteById(id);
+    }
+
 }

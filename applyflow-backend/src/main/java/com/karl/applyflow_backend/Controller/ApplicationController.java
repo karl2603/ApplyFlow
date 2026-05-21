@@ -28,4 +28,8 @@ public class ApplicationController {
         service.editApplication(id, companyName, role, type, location, CTC, status);
     }
 
+    @DeleteMapping("/{id}")
+    public void deleteApplication(@PathVariable("id") int id){
+        service.deleteApplication(id);
+    }
 }
