@@ -5,7 +5,6 @@ import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.context.annotation.Primary;
 
 @Data
 @AllArgsConstructor
@@ -18,6 +17,6 @@ public class Application {
     private String role;
     private String type;
     private String location;
-    private String appliedDate;
+    private String CTC;
     private String status;
 }
