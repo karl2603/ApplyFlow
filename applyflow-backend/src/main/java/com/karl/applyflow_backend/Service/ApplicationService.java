@@ -16,8 +16,8 @@ public class ApplicationService {
         return repository.findAll();
     }
     //Post Method
-    public void addApplication(int id, String companyName, String role, String type, String location, String CTC, String status){
-        Application newApplication = new Application(id, companyName, role, type, location, CTC, status);
+    public void addApplication(String companyName, String role, String type, String location, String CTC, String status){
+        Application newApplication = new Application(0, companyName, role, type, location, CTC, status);
         repository.save(newApplication);
     }
     //Put Method

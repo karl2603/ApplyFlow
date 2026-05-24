@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin("http://localhost:5173/")
 @RestController
 @RequestMapping("/applications")
 public class ApplicationController {
@@ -19,8 +20,8 @@ public class ApplicationController {
     }
 
     @PostMapping("/newApplication")
-    public void addApplication(@RequestParam("id") int id,@RequestParam("companyName") String companyName, @RequestParam("role") String role, @RequestParam("type") String type, @RequestParam("location") String location, @RequestParam("CTC") String CTC, @RequestParam("status") String status){
-        service.addApplication(id, companyName, role, type, location, CTC, status);
+    public void addApplication(@RequestParam("companyName") String companyName, @RequestParam("role") String role, @RequestParam("type") String type, @RequestParam("location") String location, @RequestParam("CTC") String CTC, @RequestParam("status") String status){
+        service.addApplication(companyName, role, type, location, CTC, status);
     }
 
     @PutMapping("/editApplication")
