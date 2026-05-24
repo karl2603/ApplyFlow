@@ -1,37 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { 
-  Briefcase, 
-  LayoutDashboard, 
-  Plus, 
-  Search, 
-  MapPin, 
-  DollarSign, 
-  Building2, 
-  Clock, 
-  Edit3, 
-  Trash2, 
-  X,
-  Target,
-  Award,
-  AlertCircle,
-  ChevronRight,
-  Sparkles,
-  Code
+import { motion, AnimatePresence, useMotionTemplate, useMotionValue } from 'framer-motion';
+import {
+  Briefcase, LayoutDashboard, Plus, Search, MapPin,
+  Building2, Clock, Edit3, Trash2, X, Target, Award, AlertCircle,
+  ChevronRight, Code
 } from 'lucide-react';
 import './App.css';
 
 const API_BASE_URL = 'http://localhost:8080';
 
-const getStatusConfig = (status) => {
-  const configs = {
-    'Applied': { color: '#a1a1aa', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.1)', glow: 'rgba(255,255,255,0)' },
-    'OA': { color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.05)', border: 'rgba(96, 165, 250, 0.2)', glow: 'rgba(96, 165, 250, 0.4)' },
-    'Interview': { color: '#c084fc', bg: 'rgba(192, 132, 252, 0.05)', border: 'rgba(192, 132, 252, 0.2)', glow: 'rgba(192, 132, 252, 0.4)' },
-    'Offer': { color: '#34d399', bg: 'rgba(52, 211, 153, 0.05)', border: 'rgba(52, 211, 153, 0.2)', glow: 'rgba(52, 211, 153, 0.4)' },
-    'Rejected': { color: '#f87171', bg: 'rgba(248, 113, 113, 0.05)', border: 'rgba(248, 113, 113, 0.2)', glow: 'rgba(248, 113, 113, 0.4)' }
-  };
-  return configs[status] || configs['Applied'];
+const statusConfig = {
+  'Applied': { color: '#a1a1aa', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)' },
+  'OA': { color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.08)', border: 'rgba(96, 165, 250, 0.2)' },
+  'Interview': { color: '#c084fc', bg: 'rgba(192, 132, 252, 0.08)', border: 'rgba(192, 132, 252, 0.2)' },
+  'Offer': { color: '#34d399', bg: 'rgba(52, 211, 153, 0.08)', border: 'rgba(52, 211, 153, 0.2)' },
+  'Rejected': { color: '#f87171', bg: 'rgba(248, 113, 113, 0.08)', border: 'rgba(248, 113, 113, 0.2)' }
+};
+
+const getStatus = (status) => statusConfig[status] || statusConfig['Applied'];
+
+const SpotlightCard = ({ children, onClick, app }) => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({ currentTarget, clientX, clientY }) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  return (
+    <motion.div
+      className="premium-card"
+      onMouseMove={handleMouseMove}
+      onClick={onClick}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      layout
+    >
+      <motion.div
+        className="card-spotlight"
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              400px circle at ${mouseX}px ${mouseY}px,
+              rgba(255,255,255,0.08),
+              transparent 80%
+            )
+          `,
+        }}
+      />
+      <div className="card-border-gradient" />
+      <div className="card-inner">{children}</div>
+    </motion.div>
+  );
 };
 
 export default function App() {
@@ -40,19 +65,29 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApp, setEditingApp] = useState(null);
-  
+  const [toast, setToast] = useState(null);
+  const searchInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
-    companyName: '',
-    role: '',
-    type: '',
-    location: '',
-    CTC: '',
-    status: 'Applied'
+    companyName: '', role: '', type: '', location: '', CTC: '', status: 'Applied'
   });
 
   useEffect(() => {
     fetchApplications();
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const fetchApplications = async () => {
     try {
@@ -60,9 +95,9 @@ export default function App() {
       const response = await axios.get(`${API_BASE_URL}/applications`);
       setApplications(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch applications', error);
+      showToast('Connection anomaly detected');
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 600);
     }
   };
 
@@ -72,36 +107,21 @@ export default function App() {
   };
 
   const openModal = (app = null) => {
-    if (app) {
-      setEditingApp(app);
-      setFormData({
-        companyName: app.companyName || '',
-        role: app.role || '',
-        type: app.type || '',
-        location: app.location || '',
-        // Checking both CTC and ctc to handle backend serialization differences
-        CTC: app.CTC || app.ctc || '',
-        status: app.status || 'Applied'
-      });
-    } else {
-      setEditingApp(null);
-      setFormData({
-        companyName: '',
-        role: '',
-        type: '',
-        location: '',
-        CTC: '',
-        status: 'Applied'
-      });
-    }
+    setEditingApp(app);
+    setFormData(app ? {
+      companyName: app.companyName || '',
+      role: app.role || '',
+      type: app.type || '',
+      location: app.location || '',
+      CTC: app.CTC || app.ctc || '',
+      status: app.status || 'Applied'
+    } : { companyName: '', role: '', type: '', location: '', CTC: '', status: 'Applied' });
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setTimeout(() => {
-      setEditingApp(null);
-    }, 300);
+    setTimeout(() => setEditingApp(null), 300);
   };
 
   const handleSubmit = async (e) => {
@@ -111,15 +131,18 @@ export default function App() {
         await axios.put(`${API_BASE_URL}/applications/editApplication`, null, {
           params: { id: editingApp.id, ...formData }
         });
+        showToast('Application Updated');
       } else {
         await axios.post(`${API_BASE_URL}/applications/newApplication`, null, {
-          params: formData
+          params: { ...formData }
         });
+        showToast('Application Created');
       }
       closeModal();
       fetchApplications();
     } catch (error) {
-      console.error('Failed to save application', error);
+      console.error("Submission error:", error);
+      showToast('Error processing application');
     }
   };
 
@@ -127,13 +150,14 @@ export default function App() {
     e.stopPropagation();
     try {
       await axios.delete(`${API_BASE_URL}/applications/${id}`);
+      showToast('Application Deleted');
       fetchApplications();
     } catch (error) {
-      console.error('Failed to delete application', error);
+      showToast('Application Deletion failed!');
     }
   };
 
-  const filteredApps = applications.filter(app => 
+  const filteredApps = applications.filter(app =>
     app.companyName?.toLowerCase().includes(search.toLowerCase()) ||
     app.role?.toLowerCase().includes(search.toLowerCase())
   );
@@ -145,175 +169,160 @@ export default function App() {
     offers: applications.filter(a => a.status === 'Offer').length
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } }
+  };
+
   return (
     <div className="app-container">
       <div className="cinematic-bg">
-        <div className="mesh-gradient"></div>
-        <div className="noise-texture"></div>
+        <div className="ambient-light main-glow"></div>
+        <div className="ambient-light accent-glow"></div>
+        <div className="noise-overlay"></div>
+        <div className="grid-overlay"></div>
       </div>
 
       <nav className="glass-sidebar">
         <div className="brand-header">
           <div className="logo-mark">
             <Target size={18} strokeWidth={2.5} />
-            <div className="logo-glow"></div>
           </div>
           <span className="brand-text">ApplyFlow</span>
         </div>
-        
+
         <div className="nav-group">
           <p className="nav-label">Menu</p>
           <button className="nav-link active">
             <LayoutDashboard size={16} />
-            <span>Overview</span>
+            <span>My Applications</span>
           </button>
         </div>
       </nav>
 
       <main className="main-viewport">
         <header className="glass-header">
-          <div className="search-bar">
+          <div className="search-wrapper">
             <Search size={16} className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Search by company or role..." 
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search by company or role..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              className="search-input"
             />
-            <div className="search-shortcut">⌘K</div>
           </div>
-          
-          <button className="premium-btn primary" onClick={() => openModal()}>
-            <span className="btn-content">
-              <Plus size={16} />
-              New Application
-            </span>
-            <div className="btn-glow"></div>
-          </button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="premium-btn primary"
+            onClick={() => openModal()}
+          >
+            <Plus size={16} />
+            <span>Create Application</span>
+          </motion.button>
         </header>
 
         <div className="content-scroll">
-          <div className="hero-metrics">
-            <div className="metric-card">
-              <div className="metric-bg-glow" style={{background: 'rgba(255,255,255,0.1)'}}></div>
-              <div className="metric-header">
-                <div className="metric-icon"><Briefcase size={16} /></div>
-                <span>Active Track</span>
-              </div>
-              <div className="metric-value">{stats.active}</div>
-              <div className="metric-sparkline active-line"></div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-bg-glow" style={{background: 'rgba(96, 165, 250, 0.15)'}}></div>
-              <div className="metric-header">
-                <div className="metric-icon blue"><Code size={16} /></div>
-                <span>Assessments</span>
-              </div>
-              <div className="metric-value">{stats.oa}</div>
-              <div className="metric-sparkline oa-line"></div>
-            </div>
-            
-            <div className="metric-card">
-              <div className="metric-bg-glow" style={{background: 'rgba(192, 132, 252, 0.15)'}}></div>
-              <div className="metric-header">
-                <div className="metric-icon purple"><Clock size={16} /></div>
-                <span>Interviews</span>
-              </div>
-              <div className="metric-value">{stats.interviews}</div>
-              <div className="metric-sparkline interview-line"></div>
-            </div>
-            
-            <div className="metric-card">
-              <div className="metric-bg-glow" style={{background: 'rgba(52, 211, 153, 0.15)'}}></div>
-              <div className="metric-header">
-                <div className="metric-icon green"><Award size={16} /></div>
-                <span>Offers</span>
-              </div>
-              <div className="metric-value">{stats.offers}</div>
-              <div className="metric-sparkline offer-line"></div>
-            </div>
-          </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="hero-metrics"
+          >
+            {[
+              { label: 'Total Applications', val: stats.active, icon: <Briefcase size={16} />, color: 'var(--text-primary)' },
+              { label: 'Assessments', val: stats.oa, icon: <Code size={16} />, color: '#60a5fa' },
+              { label: 'Interviews', val: stats.interviews, icon: <Clock size={16} />, color: '#c084fc' },
+              { label: 'Offers Secured', val: stats.offers, icon: <Award size={16} />, color: '#34d399' }
+            ].map((stat, i) => (
+              <motion.div variants={itemVariants} key={i} className="metric-card">
+                <div className="metric-header">
+                  <div className="metric-icon" style={{ color: stat.color }}>{stat.icon}</div>
+                  <span>{stat.label}</span>
+                </div>
+                <div className="metric-value">{stat.val}</div>
+                <div className="metric-sparkline" style={{
+                  background: `linear-gradient(90deg, ${stat.color} 0%, transparent 100%)`
+                }}></div>
+              </motion.div>
+            ))}
+          </motion.div>
 
           <div className="board-section">
             <div className="board-header">
               <div className="title-group">
-                <h2>Pipeline</h2>
-                <div className="badge">{filteredApps.length} entries</div>
+                <h2>My Applications</h2>
               </div>
             </div>
 
             {loading ? (
-              <div className="state-container loading">
-                <div className="premium-spinner"></div>
-                <p>Syncing data...</p>
+              <div className="premium-grid">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <div key={i} className="skeleton-card">
+                    <div className="skeleton-line title"></div>
+                    <div className="skeleton-line sub"></div>
+                    <div className="skeleton-line blocks"></div>
+                  </div>
+                ))}
               </div>
             ) : filteredApps.length === 0 ? (
-              <div className="state-container empty">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="state-container empty">
                 <div className="empty-illustration">
                   <AlertCircle size={32} />
                   <div className="illus-glow"></div>
                 </div>
-                <h3>Void detected</h3>
-                <p>No applications match your criteria. Expand your horizons.</p>
-              </div>
+                <h3>No results found</h3>
+                <p>We couldn’t find any applications matching your search.</p>
+              </motion.div>
             ) : (
-              <div className="premium-grid">
-                {filteredApps.map((app, index) => (
-                  <div 
-                    key={app.id} 
-                    className="premium-card" 
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => openModal(app)}
-                  >
-                    <div className="card-border-gradient"></div>
-                    <div className="card-inner">
+              <motion.div layout className="premium-grid">
+                <AnimatePresence mode="popLayout">
+                  {filteredApps.map((app) => (
+                    <SpotlightCard key={app.id} app={app} onClick={() => openModal(app)}>
                       <div className="card-top">
                         <div className="company-id">
                           <div className="avatar">
-                            <Building2 size={14} />
+                            <Building2 size={16} />
                           </div>
                           <div className="id-text">
                             <h3>{app.companyName}</h3>
                             <p>{app.role}</p>
                           </div>
                         </div>
-                        <div className="card-actions">
-                          <button 
-                            className="action-btn danger" 
-                            onClick={(e) => handleDelete(app.id, e)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        <button
+                          className="action-btn danger"
+                          onClick={(e) => handleDelete(app.id, e)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                      
+
                       <div className="card-meta">
-                        <div className="meta-item">
-                          <MapPin size={12} />
-                          <span>{app.location || 'N/A'}</span>
-                        </div>
+                        <div className="meta-item"><MapPin size={12} /><span>{app.location || 'N/A'}</span></div>
                         <div className="meta-separator"></div>
-                        <div className="meta-item">
-                          <Briefcase size={12} />
-                          <span>{app.type || 'N/A'}</span>
-                        </div>
+                        <div className="meta-item"><Briefcase size={12} /><span>{app.type || 'N/A'}</span></div>
                         <div className="meta-separator"></div>
-                        <div className="meta-item highlight">
-                          <DollarSign size={12} />
-                          {/* Fallback to ctc if CTC is not mapped from JSON properly */}
-                          <span>{app.CTC || app.ctc || 'N/A'}</span>
-                        </div>
+                        <div className="meta-item highlight"><span>₹{app.CTC || app.ctc || 'N/A'}</span></div>
                       </div>
-                      
+
                       <div className="card-bottom">
-                        <div 
+                        <div
                           className="status-pill"
                           style={{
-                            '--pill-color': getStatusConfig(app.status).color,
-                            '--pill-bg': getStatusConfig(app.status).bg,
-                            '--pill-border': getStatusConfig(app.status).border,
-                            '--pill-glow': getStatusConfig(app.status).glow
+                            '--pill-color': getStatus(app.status).color,
+                            '--pill-bg': getStatus(app.status).bg,
+                            '--pill-border': getStatus(app.status).border
                           }}
                         >
                           <div className="pulse-dot"></div>
@@ -321,137 +330,170 @@ export default function App() {
                         </div>
                         <ChevronRight size={14} className="hover-arrow" />
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </SpotlightCard>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
             )}
           </div>
         </div>
       </main>
 
-      {isModalOpen && (
-        <div className="premium-dialog-root">
-          <div className="dialog-backdrop" onClick={closeModal}></div>
-          <div className="dialog-panel">
-            <div className="dialog-header">
-              <div className="dialog-title">
-                {editingApp ? (
-                  <>
-                    <Edit3 size={18} className="title-icon" />
-                    <h2>Edit Application</h2>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={18} className="title-icon" />
-                    <h2>New Application</h2>
-                  </>
-                )}
-              </div>
-              <button className="dialog-close" type="button" onClick={closeModal}>
-                <X size={16} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="dialog-form">
-              <div className="input-row">
-                <div className="field-group">
-                  <label>Company</label>
-                  <input 
-                    type="text" 
-                    name="companyName" 
-                    value={formData.companyName} 
-                    onChange={handleInputChange} 
-                    required 
-                    placeholder="e.g. Vercel"
-                  />
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="premium-dialog-root">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="dialog-backdrop"
+              onClick={closeModal}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="dialog-panel"
+            >
+              <div className="dialog-header">
+                <div className="dialog-title">
+                  {editingApp ? <Edit3 size={18} /> : <Edit3 size={18} />}
+                  <h2>{editingApp ? 'Edit Application' : 'New Application'}</h2>
                 </div>
-                <div className="field-group">
-                  <label>Role</label>
-                  <input 
-                    type="text" 
-                    name="role" 
-                    value={formData.role} 
-                    onChange={handleInputChange} 
-                    required 
-                    placeholder="e.g. Frontend Engineer"
-                  />
-                </div>
+                <button className="dialog-close" type="button" onClick={closeModal}>
+                  <X size={16} />
+                </button>
               </div>
 
-              <div className="input-row">
-                <div className="field-group">
-                  <label>Location</label>
-                  <input 
-                    type="text" 
-                    name="location" 
-                    value={formData.location} 
-                    onChange={handleInputChange} 
-                    required 
-                    placeholder="e.g. Remote"
-                  />
-                </div>
-                <div className="field-group">
-                  <label>Compensation</label>
-                  <div className="input-with-icon">
-                    <DollarSign size={14} className="input-icon" />
-                    <input 
-                      type="text" 
-                      name="CTC" 
-                      value={formData.CTC} 
-                      onChange={handleInputChange} 
-                      required 
-                      placeholder="e.g. 120,000"
-                      className="has-icon"
+              <form onSubmit={handleSubmit} className="dialog-form">
+                <div className="input-row">
+                  <div className="field-group">
+                    <label>Company</label>
+                    <input
+                      type="text"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="e.g. InfoSys"
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label>Role</label>
+                    <input
+                      type="text"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="e.g. Java FullStack"
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="input-row">
-                <div className="field-group">
-                  <label>Employment Type</label>
-                  <div className="custom-select">
-                    <select name="type" value={formData.type} onChange={handleInputChange} required>
-                      <option value="" disabled>Select Type</option>
-                      <option value="Full-time">Full-time</option>
-                      <option value="Part-time">Part-time</option>
-                      <option value="Contract">Contract</option>
-                      <option value="Internship">Internship</option>
-                    </select>
-                    <ChevronRight size={14} className="select-arrow" />
+                <div className="input-row">
+                  <div className="field-group">
+                    <label>Location</label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="e.g. Bangalore"
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label>Compensation</label>
+                    <div className="input-with-icon">
+                      <span className="input-icon rupee-symbol">₹</span>
+                      <input
+                        type="text"
+                        name="CTC"
+                        value={formData.CTC}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="e.g. 4.4LPA"
+                        className="has-icon"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="field-group">
-                  <label>Pipeline Status</label>
-                  <div className="custom-select">
-                    <select name="status" value={formData.status} onChange={handleInputChange} required>
-                      <option value="Applied">Applied</option>
-                      <option value="OA">Online Assessment</option>
-                      <option value="Interview">Interview</option>
-                      <option value="Offer">Offer</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
-                    <ChevronRight size={14} className="select-arrow" />
+
+                <div className="input-row">
+                  <div className="field-group">
+                    <label>Employment Type</label>
+                    <div className="custom-select">
+                      <select
+                        name="type"
+                        value={formData.type}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="" disabled>Select type</option>
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Internship">Internship</option>
+                      </select>
+                      <ChevronRight size={14} className="select-arrow" />
+                    </div>
+                  </div>
+
+                  <div className="field-group">
+                    <label>Status</label>
+                    <div className="custom-select">
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="Applied">Applied</option>
+                        <option value="OA">Online Assessment</option>
+                        <option value="Interview">Interview</option>
+                        <option value="Offer">Offer</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                      <ChevronRight size={14} className="select-arrow" />
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="dialog-footer">
-                <button type="button" className="premium-btn secondary" onClick={closeModal}>
-                  <span className="btn-content">Cancel</span>
-                </button>
-                <button type="submit" className="premium-btn primary submit-btn">
-                  <span className="btn-content">
-                    {editingApp ? 'Save Changes' : 'Initialize Application'}
-                  </span>
-                  <div className="btn-glow"></div>
-                </button>
-              </div>
-            </form>
+
+                <div className="dialog-footer">
+                  <button
+                    type="button"
+                    className="premium-btn secondary"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
+
+                  <button type="submit" className="premium-btn primary">
+                    {editingApp ? 'Save Changes' : 'Create Application'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="premium-toast"
+          >
+            <span>{toast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
