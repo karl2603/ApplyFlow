@@ -25,7 +25,9 @@ public class ApplicationController {
     }
 
     @GetMapping("/filterByStatus")
-    public List<Application> filterByStatus("")
+    public List<Application> filterByStatus(@RequestParam("status") String status){
+        return service.filterByStatus(status);
+    }
 
     @PostMapping("/newApplication")
     public void addApplication(@RequestParam("companyName") String companyName, @RequestParam("role") String role, @RequestParam("type") String type, @RequestParam("location") String location, @RequestParam("CTC") String CTC, @RequestParam("status") String status){

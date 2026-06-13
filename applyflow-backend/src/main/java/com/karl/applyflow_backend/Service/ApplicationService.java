@@ -19,6 +19,9 @@ public class ApplicationService {
     public List<Application> filterByType(String employmentType){
         return repository.filterByType(employmentType);
     }
+    public List<Application> filterByStatus(String status){
+        return repository.filterByStatus(status);
+    }
     //Post Method
     public void addApplication(String companyName, String role, String type, String location, String CTC, String status){
         Application newApplication = new Application(0, companyName, role, type, location, CTC, status);
