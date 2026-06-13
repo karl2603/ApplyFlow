@@ -15,12 +15,9 @@ public class ApplicationService {
     public List<Application> displayAllApplications(){
         return repository.findAll();
     }
-    //Custom Native Queries
-    public List<Application> filterByType(String employmentType){
-        return repository.filterByType(employmentType);
-    }
-    public List<Application> filterByStatus(String status){
-        return repository.filterByStatus(status);
+    //Custom Native Query
+    public List<Application> filter(String employmentType, String status){
+        return repository.filter(employmentType, status);
     }
     //Post Method
     public void addApplication(String companyName, String role, String type, String location, String CTC, String status){

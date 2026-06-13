@@ -19,14 +19,9 @@ public class ApplicationController {
         return service.displayAllApplications();
     }
 
-    @GetMapping("/filterByType")
-    public List<Application> filterByType(@RequestParam("type") String employmentType){
-        return service.filterByType(employmentType);
-    }
-
-    @GetMapping("/filterByStatus")
-    public List<Application> filterByStatus(@RequestParam("status") String status){
-        return service.filterByStatus(status);
+    @GetMapping("/filter")
+    public List<Application> filter(@RequestParam("type") String employmentType, @RequestParam("status") String status){
+        return service.filter(employmentType, status);
     }
 
     @PostMapping("/newApplication")
