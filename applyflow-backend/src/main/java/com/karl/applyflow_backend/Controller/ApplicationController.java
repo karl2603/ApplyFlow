@@ -19,6 +19,14 @@ public class ApplicationController {
         return service.displayAllApplications();
     }
 
+    @GetMapping("/filterByType")
+    public List<Application> filterByType(@RequestParam("type") String employmentType){
+        return service.filterByType(employmentType);
+    }
+
+    @GetMapping("/filterByStatus")
+    public List<Application> filterByStatus("")
+
     @PostMapping("/newApplication")
     public void addApplication(@RequestParam("companyName") String companyName, @RequestParam("role") String role, @RequestParam("type") String type, @RequestParam("location") String location, @RequestParam("CTC") String CTC, @RequestParam("status") String status){
         service.addApplication(companyName, role, type, location, CTC, status);

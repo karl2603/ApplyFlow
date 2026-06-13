@@ -15,6 +15,10 @@ public class ApplicationService {
     public List<Application> displayAllApplications(){
         return repository.findAll();
     }
+    //Custom Native Queries
+    public List<Application> filterByType(String employmentType){
+        return repository.filterByType(employmentType);
+    }
     //Post Method
     public void addApplication(String companyName, String role, String type, String location, String CTC, String status){
         Application newApplication = new Application(0, companyName, role, type, location, CTC, status);
