@@ -1,8 +1,13 @@
 package com.karl.applyflow_backend.Controller;
 
+import com.karl.applyflow_backend.DTOs.RequestDTOs.ApplicationRequest;
+import com.karl.applyflow_backend.DTOs.ResponseDTOs.ApplicationResponse;
 import com.karl.applyflow_backend.Models.Application;
 import com.karl.applyflow_backend.Service.ApplicationService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,21 +20,22 @@ public class ApplicationController {
     private ApplicationService service;
 
     @GetMapping()
-    public List<Application>  displayAllApplications(){
+    public List<ApplicationResponse> displayAllApplications(){
         return service.displayAllApplications();
     }
 
     @GetMapping("/filter")
-    public List<Application> filter(@RequestParam("type") String employmentType, @RequestParam("status") String status){
+    public List<ApplicationResponse> filter(@RequestParam("type") String employmentType, @RequestParam("status") String status){
         return service.filter(employmentType, status);
     }
 
-    @PostMapping("/newApplication")
-    public void addApplication(@RequestParam("companyName") String companyName, @RequestParam("role") String role, @RequestParam("type") String type, @RequestParam("location") String location, @RequestParam("CTC") String CTC, @RequestParam("status") String status){
-        service.addApplication(companyName, role, type, location, CTC, status);
+    @PostMapping()
+    public ResponseEntity<String> addApplication(@Valid @RequestBody ApplicationRequest userRequest){
+        service.addApplication(userRequest);
+        return new ResponseEntity<>("Application Created", HttpStatus.CREATED);
     }
 
-    @PutMapping("/editApplication")
+    @PutMapping("/{id}")
     public void editApplication(@RequestParam("id") int id, @RequestParam("companyName") String companyName, @RequestParam("role") String role, @RequestParam("type") String type, @RequestParam("location") String location, @RequestParam("CTC") String CTC, @RequestParam("status") String status){
         service.editApplication(id, companyName, role, type, location, CTC, status);
     }
