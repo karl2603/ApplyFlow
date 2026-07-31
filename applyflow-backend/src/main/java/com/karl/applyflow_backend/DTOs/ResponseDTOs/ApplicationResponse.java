@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class ApplicationResponse {
+    private int id;
     private String companyName;
     private String role;
     private String type;
