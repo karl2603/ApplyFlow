@@ -8,6 +8,8 @@
     import lombok.Data;
     import lombok.NoArgsConstructor;
 
+    import java.time.*;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -22,4 +24,7 @@
         private String location;
         private String CTC;
         private String status;
+        //Filled by backend
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
     }
