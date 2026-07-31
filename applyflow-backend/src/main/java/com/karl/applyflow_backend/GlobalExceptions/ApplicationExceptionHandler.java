@@ -11,6 +11,6 @@ import java.util.NoSuchElementException;
 public class ApplicationExceptionHandler {
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<String> exception1(Exception e){
-        return new ResponseEntity<>("Record Doesn't Exist", HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>("Record Doesn't Exist", HttpStatus.NOT_FOUND);
     }
 }

@@ -36,8 +36,9 @@ public class ApplicationController {
     }
 
     @PutMapping("/{id}")
-    public void editApplication(@RequestParam("id") int id, @RequestParam("companyName") String companyName, @RequestParam("role") String role, @RequestParam("type") String type, @RequestParam("location") String location, @RequestParam("CTC") String CTC, @RequestParam("status") String status){
-        service.editApplication(id, companyName, role, type, location, CTC, status);
+    public ResponseEntity<String> editApplication(@PathVariable("id") int id, @Valid @RequestBody ApplicationRequest userRequest){
+        service.editApplication(id, userRequest);
+        return new ResponseEntity<>("Application Modified", HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")

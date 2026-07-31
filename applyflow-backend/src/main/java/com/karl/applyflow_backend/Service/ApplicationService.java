@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class ApplicationService {
@@ -28,7 +29,7 @@ public class ApplicationService {
     }
     //Custom Native Query
     public List<ApplicationResponse> filter(String employmentType, String status){
-        List<Application> applications = repository.findAll();
+        List<Application> applications = repository.filter(employmentType, status);
         List<ApplicationResponse> response = new ArrayList<>();
         for(int i=0; i<applications.size(); i++){
             Application application = applications.get(i);
@@ -52,11 +53,27 @@ public class ApplicationService {
         repository.save(newApplication);
     }
     //Put Method
-    public void editApplication(int id, String companyName, String role, String type, String location, String CTC, String status){
-
+    public void editApplication(int id, ApplicationRequest request){
+        Application application = repository.findById(id).orElse(null);
+        if(application == null){
+            throw new NoSuchElementException();
+        }
+        application.setCompanyName(request.getCompanyName());
+        application.setRole(request.getRole());
+        application.setType(request.getType());
+        application.setLocation(request.getLocation());
+        application.setCtc(request.getCtc());
+        application.setStatus(request.getStatus());
+        application.setUpdatedAt(LocalDateTime.now());
+        application.setVersion(application.getVersion()+1);
+        repository.save(application);
     }
     //Delete Methods
     public void deleteApplication(int id){
+        Application application = repository.findById(id).orElse(null);
+        if(application == null){
+            throw new NoSuchElementException();
+        }
         repository.deleteById(id);
     }
 
