@@ -22,9 +22,10 @@
         private String role;
         private String type;
         private String location;
-        private String CTC;
+        private int ctc;
         private String status;
         //Filled by backend
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        private int version;
     }
