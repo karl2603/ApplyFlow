@@ -4,6 +4,7 @@ import com.karl.applyflow_backend.DTOs.RequestDTOs.ApplicationRequest;
 import com.karl.applyflow_backend.DTOs.ResponseDTOs.ApplicationResponse;
 import com.karl.applyflow_backend.Models.Application;
 import com.karl.applyflow_backend.Repository.ApplicationRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+@Slf4j
 @Service
 public class ApplicationService {
     @Autowired
@@ -56,6 +58,7 @@ public class ApplicationService {
     public void editApplication(int id, ApplicationRequest request){
         Application application = repository.findById(id).orElse(null);
         if(application == null){
+            log.error("Application Doesn't exist");
             throw new NoSuchElementException();
         }
         application.setCompanyName(request.getCompanyName());
@@ -72,6 +75,7 @@ public class ApplicationService {
     public void deleteApplication(int id){
         Application application = repository.findById(id).orElse(null);
         if(application == null){
+            log.error("Application doesn't exist");
             throw new NoSuchElementException();
         }
         repository.deleteById(id);

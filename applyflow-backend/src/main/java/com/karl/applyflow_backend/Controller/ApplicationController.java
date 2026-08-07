@@ -5,6 +5,7 @@ import com.karl.applyflow_backend.DTOs.ResponseDTOs.ApplicationResponse;
 import com.karl.applyflow_backend.Models.Application;
 import com.karl.applyflow_backend.Service.ApplicationService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,12 +16,14 @@ import java.util.List;
 @CrossOrigin("http://localhost:5173/")
 @RestController
 @RequestMapping("/applications")
+@Slf4j
 public class ApplicationController {
     @Autowired
     private ApplicationService service;
 
     @GetMapping()
     public List<ApplicationResponse> displayAllApplications(){
+        log.info("Applications Fetched Successfully");
         return service.displayAllApplications();
     }
 
@@ -32,17 +35,20 @@ public class ApplicationController {
     @PostMapping()
     public ResponseEntity<String> addApplication(@Valid @RequestBody ApplicationRequest userRequest){
         service.addApplication(userRequest);
+        log.info("Application created for company = {}, role = {}", userRequest.getCompanyName(), userRequest.getRole());
         return new ResponseEntity<>("Application Created", HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<String> editApplication(@PathVariable("id") int id, @Valid @RequestBody ApplicationRequest userRequest){
         service.editApplication(id, userRequest);
+        log.info("Application Modified with id = {}", id);
         return new ResponseEntity<>("Application Modified", HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public void deleteApplication(@PathVariable("id") int id){
         service.deleteApplication(id);
+        log.warn("Application Deleted");
     }
 }
