@@ -37,7 +37,7 @@ public class ProfileImageService {
          profileImage.setFilePath(filePath);
 
          file.transferTo(new File(fileSystemPath+filePath));
-         log.info("File stored successfully in File System");
+         log.info("File stored successfully in File System name = {}", filePath);
 
          profileImageRepository.save(profileImage);
     }
